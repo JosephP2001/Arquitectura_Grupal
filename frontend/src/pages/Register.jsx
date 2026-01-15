@@ -44,11 +44,31 @@ const Register = () => {
     setLoading(true)
 
     try {
-      const response = await authService.register(formData)
+      // Preparar datos - convertir specialty_id a número si es médico
+      const dataToSend = {
+        ...formData,
+        specialty_id: formData.role === 'doctor' && formData.specialty_id 
+          ? parseInt(formData.specialty_id) 
+          : undefined
+      }
+      
+      const response = await authService.register(dataToSend)
       login(response.access_token, response.user)
       navigate(response.user.role === 'patient' ? '/patient/dashboard' : '/doctor/dashboard')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al registrarse')
+      // Manejar errores de validación de Pydantic (422)
+      if (err.response?.data?.detail) {
+        if (Array.isArray(err.response.data.detail)) {
+          // Errores de validación de Pydantic
+          const errorMessages = err.response.data.detail.map(e => e.msg).join(', ')
+          setError(errorMessages)
+        } else {
+          // Error simple
+          setError(err.response.data.detail)
+        }
+      } else {
+        setError('Error al registrarse')
+      }
     } finally {
       setLoading(false)
     }

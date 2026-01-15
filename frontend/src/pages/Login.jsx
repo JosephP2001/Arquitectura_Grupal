@@ -21,7 +21,19 @@ const Login = () => {
 
     try {
       const response = await authService.login(formData.username, formData.password)
+      
+      // Guardar en localStorage DIRECTAMENTE también (por si acaso)
+      localStorage.setItem('token', response.access_token)
+      localStorage.setItem('user', JSON.stringify(response.user))
+      
+      // Llamar al contexto
       login(response.access_token, response.user)
+      
+      // Esperar un tick para asegurar que se guarde
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
+      // Verificar que se guardó
+      console.log('Token guardado:', localStorage.getItem('token') ? 'SÍ' : 'NO')
       
       // Redirigir según el rol
       if (response.user.role === 'patient') {
