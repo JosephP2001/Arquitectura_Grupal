@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     MONGODB_DB_NAME: str = "medical_records"
     
     # JWT
-    JWT_SECRET: str = "your-super-secret-jwt-key-change-in-production"
+    JWT_SECRET: str = "your-super-secret-jwt-key-change-in-production-12345"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     

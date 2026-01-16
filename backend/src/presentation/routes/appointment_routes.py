@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from src.config.database import get_db
 from src.infrastructure.models.postgresql.models import (
     Appointment, User, Patient, Doctor, AppointmentStatus, UserRole
@@ -14,7 +14,7 @@ router = APIRouter()
 class AppointmentCreate(BaseModel):
     doctor_id: int
     appointment_date: datetime
-    reason: str
+    reason: str 
     duration_minutes: int = 30
 
 class AppointmentResponse(BaseModel):
@@ -25,7 +25,7 @@ class AppointmentResponse(BaseModel):
     duration_minutes: int
     status: str
     reason: str
-    notes: str = None
+    notes: str | None = None
     patient_name: str
     doctor_name: str
     

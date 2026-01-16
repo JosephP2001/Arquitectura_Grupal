@@ -22,29 +22,31 @@ const Login = () => {
     try {
       const response = await authService.login(formData.username, formData.password)
       
-      // Guardar en localStorage DIRECTAMENTE también (por si acaso)
-      localStorage.setItem('token', response.access_token)
-      localStorage.setItem('user', JSON.stringify(response.user))
+      console.log('✅ Login exitoso:', response.user.username)
+      console.log('🔑 Token recibido:', response.access_token.substring(0, 20) + '...')
       
-      // Llamar al contexto
+      // Guardar en contexto
       login(response.access_token, response.user)
       
-      // Esperar un tick para asegurar que se guarde
-      await new Promise(resolve => setTimeout(resolve, 200))
+      // Verificar que se guardó en localStorage
+      const savedToken = localStorage.getItem('token')
+      console.log('💾 Token en localStorage:', savedToken ? 'SÍ' : 'NO')
       
-      // Verificar que se guardó
-      console.log('Token guardado:', localStorage.getItem('token') ? 'SÍ' : 'NO')
+      if (!savedToken) {
+        throw new Error('No se pudo guardar el token')
+      }
       
       // Redirigir según el rol
       if (response.user.role === 'patient') {
-        navigate('/patient/dashboard')
+        navigate('/patient/dashboard', { replace: true })
       } else if (response.user.role === 'doctor') {
-        navigate('/doctor/dashboard')
+        navigate('/doctor/dashboard', { replace: true })
       } else {
-        navigate('/')
+        navigate('/', { replace: true })
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al iniciar sesión')
+      console.error('❌ Error en login:', err)
+      setError(err.response?.data?.detail || err.message || 'Error al iniciar sesión')
     } finally {
       setLoading(false)
     }

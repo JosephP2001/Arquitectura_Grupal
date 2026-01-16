@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from src.config.database import get_db
 from src.infrastructure.models.postgresql.models import User, Patient, Doctor, UserRole
-from src.utils.jwt_handler import create_access_token
 from pydantic import BaseModel, EmailStr
 
 router = APIRouter()
@@ -31,7 +30,6 @@ class TokenResponse(BaseModel):
 @router.post("/register", response_model=TokenResponse)
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
     """Registrar un nuevo usuario"""
-    # Verificar si el usuario ya existe
     if db.query(User).filter(User.email == request.email).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -44,7 +42,6 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
             detail="El username ya está en uso"
         )
     
-    # Crear usuario
     hashed_password = pwd_context.hash(request.password)
     user = User(
         email=request.email,
@@ -57,7 +54,6 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     
-    # Crear perfil según el rol
     if request.role == UserRole.PATIENT:
         patient = Patient(user_id=user.id, phone=request.phone)
         db.add(patient)
@@ -77,8 +73,8 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     
     db.commit()
     
-    # Crear token
-    access_token = create_access_token(data={"sub": user.id, "role": user.role.value})
+    # Retornar user_id como "token"
+    access_token = str(user.id)
     
     return {
         "access_token": access_token,
@@ -109,7 +105,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             detail="Usuario inactivo"
         )
     
-    access_token = create_access_token(data={"sub": user.id, "role": user.role.value})
+    # Retornar user_id como "token"
+    access_token = str(user.id)
     
     return {
         "access_token": access_token,

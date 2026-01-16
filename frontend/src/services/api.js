@@ -12,10 +12,12 @@ const api = axios.create({
 // Interceptor para agregar token a las peticiones
 api.interceptors.request.use(
   (config) => {
-    // Leer el token CADA VEZ que se hace una petición
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      console.log('🔐 Enviando request a:', config.url, 'con token')
+    } else {
+      console.warn('⚠️ No hay token para:', config.url)
     }
     return config
   },
@@ -24,19 +26,29 @@ api.interceptors.request.use(
   }
 )
 
-// Interceptor para manejar errores de autenticación
+// Interceptor para manejar errores
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Solo limpiar si realmente no estamos autenticados
-      const token = localStorage.getItem('token')
-      if (!token || error.config.url !== '/auth/login') {
+    const status = error.response?.status
+    
+    if (status === 401) {
+      console.error('❌ Error 401 - Token inválido o expirado')
+      console.error('Detalle:', error.response?.data?.detail)
+      
+      // Solo limpiar si no es la ruta de login
+      if (error.config.url !== '/auth/login') {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
-        // No redirigir aquí, dejamos que el componente lo maneje
+        window.location.href = '/login'
       }
     }
+    
+    if (status === 403) {
+      console.error('❌ Error 403 - No autorizado')
+      console.error('Detalle:', error.response?.data?.detail)
+    }
+    
     return Promise.reject(error)
   }
 )
