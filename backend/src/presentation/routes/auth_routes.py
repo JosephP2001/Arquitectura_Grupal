@@ -1,121 +1,61 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Response, HTTPException, status
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
+
+from src.application.dto.login_request_dto import LoginRequestDTO
+from src.domain.services.authentication_service import AuthenticationService
+from src.infrastructure.dao.abstract_factory import PostgreSQLDAOFactory
 from src.config.database import get_db
-from src.infrastructure.models.postgresql.models import User, Patient, Doctor, UserRole
-from pydantic import BaseModel, EmailStr
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class RegisterRequest(BaseModel):
-    email: EmailStr
-    username: str
-    password: str
-    full_name: str
-    role: UserRole
-    phone: str = None
-    license_number: str = None
-    specialty_id: int = None
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
+# Inyección de dependencia: crea AuthenticationService con el DAO
+def get_auth_service(db: Session = Depends(get_db)) -> AuthenticationService:
+    factory = PostgreSQLDAOFactory(db)
+    user_dao = factory.create_user_dao()
+    return AuthenticationService(user_dao)
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str
-    user: dict
 
-@router.post("/register", response_model=TokenResponse)
-def register(request: RegisterRequest, db: Session = Depends(get_db)):
-    """Registrar un nuevo usuario"""
-    if db.query(User).filter(User.email == request.email).first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El email ya está registrado"
-        )
-    
-    if db.query(User).filter(User.username == request.username).first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El username ya está en uso"
-        )
-    
-    hashed_password = pwd_context.hash(request.password)
-    user = User(
-        email=request.email,
-        username=request.username,
-        password_hash=hashed_password,
-        full_name=request.full_name,
-        role=request.role
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    
-    if request.role == UserRole.PATIENT:
-        patient = Patient(user_id=user.id, phone=request.phone)
-        db.add(patient)
-    elif request.role == UserRole.DOCTOR:
-        if not request.license_number or not request.specialty_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Licencia y especialidad requeridas para médicos"
-            )
-        doctor = Doctor(
-            user_id=user.id,
-            license_number=request.license_number,
-            specialty_id=request.specialty_id,
-            phone=request.phone
-        )
-        db.add(doctor)
-    
-    db.commit()
-    
-    # Retornar user_id como "token"
-    access_token = str(user.id)
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "username": user.username,
-            "full_name": user.full_name,
-            "role": user.role.value
-        }
-    }
+@router.post("/login")
+def login(
+    data: LoginRequestDTO,
+    response: Response,
+    auth_service: AuthenticationService = Depends(get_auth_service)
+):
+    """
+    Endpoint de login:
+    - Valida credenciales
+    - Crea cookie de sesión
+    - Retorna mensaje y session_id
+    """
+    # Ejecuta la lógica de autenticación
+    result = auth_service.authenticate(data.username, data.password)
 
-@router.post("/login", response_model=TokenResponse)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Iniciar sesión"""
-    user = db.query(User).filter(User.username == request.username).first()
-    
-    if not user or not pwd_context.verify(request.password, user.password_hash):
+    # Si las credenciales son inválidas
+    if not result:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas"
+            detail="Credenciales inválidas"
         )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuario inactivo"
-        )
-    
-    # Retornar user_id como "token"
-    access_token = str(user.id)
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "username": user.username,
-            "full_name": user.full_name,
-            "role": user.role.value
-        }
-    }
+
+    # Crea cookie de sesión segura
+    response.set_cookie(
+        key="SESSION_ID",
+        value=result["session_id"],
+        httponly=True,
+        secure=False,  # Cambiar a True en producción con HTTPS
+        samesite="lax"
+    )
+
+    # Retorna mensaje y opcionalmente session_id (útil para debug)
+    return {"message": "Login exitoso", "session_id": result["session_id"]}
+
+
+@router.post("/logout")
+def logout(response: Response):
+    """
+    Endpoint para cerrar sesión:
+    - Borra la cookie de sesión
+    """
+    response.delete_cookie("SESSION_ID")
+    return {"message": "Logout exitoso"}

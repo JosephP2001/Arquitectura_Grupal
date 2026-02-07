@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.config.database import get_db, get_mongodb
 from src.infrastructure.models.postgresql.models import Patient, User, UserRole
-from src.presentation.middlewares.auth_middleware import get_current_user
+from src.presentation.middlewares.session_auth_middleware import get_current_user
 from src.infrastructure.dao.mongodb.medical_record_dao_impl import MedicalRecordDAOMongo
 from pydantic import BaseModel
 from typing import List
