@@ -13,16 +13,20 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configuración CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
-    allow_credentials=True,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000"
+    ],
+    allow_credentials=True,  
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Inicializar bases de datos
+# Inicializar base de datos
 @app.on_event("startup")
 async def startup_event():
     init_db()
@@ -34,10 +38,15 @@ app.include_router(doctor_router, prefix="/api/doctors", tags=["Doctors"])
 app.include_router(patient_router, prefix="/api/patients", tags=["Patients"])
 app.include_router(report_router, prefix="/api/reports", tags=["Reports"])
 
+# Root
 @app.get("/")
 async def root():
-    return {"message": "Medical Appointment Platform API", "status": "running"}
+    return {
+        "message": "Medical Appointment Platform API",
+        "status": "running"
+    }
 
+# Health check
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
