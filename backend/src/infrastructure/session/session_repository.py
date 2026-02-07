@@ -1,9 +1,12 @@
 import uuid
-import json
 from typing import Optional, Dict
 
-from src.infrastructure.resilience.circuit_breaker import CircuitBreaker
 from src.infrastructure.cache.redis_client import get_redis_client
+from src.infrastructure.resilience.circuit_breaker import CircuitBreaker
+from src.infrastructure.observability.logger import get_logger
+
+
+logger = get_logger("session_repository")
 
 # Tiempo de vida de la sesión en segundos (1 hora)
 SESSION_TTL = 60 * 60
@@ -24,21 +27,40 @@ class SessionRepository:
         """
         Crea una nueva sesión en Redis
         """
-        redis_client = get_redis_client()
-        session_id = str(uuid.uuid4())
+        try:
+            redis_client = get_redis_client()
+            session_id = str(uuid.uuid4())
 
-        # Guardar datos de sesión como hash
-        redis_client.hset(
-            f"session:{session_id}",
-            mapping={
-                "user_id": user_id,
-                "role": role
-            }
-        )
+            redis_client.hset(
+                f"session:{session_id}",
+                mapping={
+                    "user_id": user_id,
+                    "role": role,
+                },
+            )
 
-        # Expiración automática
-        redis_client.expire(f"session:{session_id}", SESSION_TTL)
-        return session_id
+            redis_client.expire(f"session:{session_id}", SESSION_TTL)
+
+            logger.info(
+                "Session created",
+                extra={
+                    "extra": {
+                        "session_id": session_id,
+                        "user_id": user_id,
+                        "role": role,
+                        "ttl": SESSION_TTL,
+                    }
+                },
+            )
+
+            return session_id
+
+        except Exception:
+            logger.error(
+                "Redis unavailable while creating session",
+                extra={"extra": {"user_id": user_id}},
+            )
+            raise
 
     @staticmethod
     @redis_breaker
@@ -47,9 +69,34 @@ class SessionRepository:
         Obtiene datos de sesión desde Redis
         Retorna None si no existe
         """
-        redis_client = get_redis_client()
-        data = redis_client.hgetall(f"session:{session_id}")
-        return data if data else None
+        try:
+            redis_client = get_redis_client()
+            data = redis_client.hgetall(f"session:{session_id}")
+
+            if data:
+                logger.info(
+                    "Session retrieved",
+                    extra={
+                        "extra": {
+                            "session_id": session_id,
+                            "user_id": data.get("user_id"),
+                        }
+                    },
+                )
+                return data
+
+            logger.info(
+                "Session not found",
+                extra={"extra": {"session_id": session_id}},
+            )
+            return None
+
+        except Exception:
+            logger.error(
+                "Redis unavailable while retrieving session",
+                extra={"extra": {"session_id": session_id}},
+            )
+            raise
 
     @staticmethod
     @redis_breaker
@@ -57,5 +104,18 @@ class SessionRepository:
         """
         Elimina la sesión de Redis
         """
-        redis_client = get_redis_client()
-        redis_client.delete(f"session:{session_id}")
+        try:
+            redis_client = get_redis_client()
+            redis_client.delete(f"session:{session_id}")
+
+            logger.info(
+                "Session deleted",
+                extra={"extra": {"session_id": session_id}},
+            )
+
+        except Exception:
+            logger.error(
+                "Redis unavailable while deleting session",
+                extra={"extra": {"session_id": session_id}},
+            )
+            raise

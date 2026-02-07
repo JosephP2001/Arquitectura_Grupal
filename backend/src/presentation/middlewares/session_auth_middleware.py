@@ -12,11 +12,13 @@ def get_current_user(
     db: Session = Depends(get_db)
 ) -> User:
     """
-    Obtiene el usuario actual basado en la cookie 'SESSION_ID'
-    Protegido con Circuit Breaker para Redis
+    Obtiene el usuario autenticado a partir de la cookie SESSION_ID.
+
+    - Redis protegido con Circuit Breaker
+    - PostgreSQL sin breaker en este nivel
     """
 
-    # Leer cookie
+    #Leer cookie de sesión
     session_id = request.cookies.get("SESSION_ID")
     if not session_id:
         raise HTTPException(
@@ -24,24 +26,30 @@ def get_current_user(
             detail="No autenticado"
         )
 
-    # Intentar obtener la sesión desde Redis
+    #Obtener sesión desde Redis (Circuit Breaker)
     try:
         session_data = SessionRepository.get_session(session_id)
     except CircuitBreakerOpen:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Servicio de sesiones no disponible"
+            detail="Servicio de sesiones no disponible temporalmente"
         )
 
-    # Si no hay sesión válida
-    if not session_data:
+    #Validar sesión
+    if not session_data or "user_id" not in session_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Sesión inválida o expirada"
         )
 
-    # Buscar el usuario en la base de datos
-    user = db.query(User).filter(User.id == session_data["user_id"]).first()
+    # Obtener usuario desde PostgreSQL
+    user = (
+        db
+        .query(User)
+        .filter(User.id == session_data["user_id"])
+        .first()
+    )
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
