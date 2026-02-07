@@ -101,7 +101,7 @@ app.include_router(report_router, prefix="/api/reports", tags=["Reports"])
 @app.get("/")
 async def root():
     return {
-        "message": "Medical Appointment Platform API",
+        "message": "Medical Appointment Platform API V1",
         "status": "running"
     }
 
