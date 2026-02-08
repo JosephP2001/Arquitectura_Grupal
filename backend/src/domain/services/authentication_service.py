@@ -19,11 +19,16 @@ class AuthenticationService:
 
         session_id = SessionRepository.create_session(
             user_id=str(user.id),
-            role=user.role
+            role=user.role.value  # Convertir enum a string
         )
 
         return {
             "session_id": session_id,
-            "user_id": user.id,
-            "role": user.role
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "full_name": user.full_name,
+                "role": user.role.value  # Convertir enum a string
+            }
         }
