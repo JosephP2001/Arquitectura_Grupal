@@ -12,7 +12,10 @@ const appointmentService = {
   },
 
   async updateAppointmentStatus(appointmentId, status) {
-    const response = await api.patch(`/appointments/${appointmentId}/status`, { status })
+    // El backend espera el parámetro 'status' en el query string, no en el body
+    const response = await api.patch(
+      `/appointments/${appointmentId}/status?status=${status}`
+    )
     return response.data
   }
 }

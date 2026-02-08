@@ -1,10 +1,15 @@
 import api from './api'
 
 const doctorService = {
-  async getDoctors(specialtyId = null) {
+  async getAllDoctors(specialtyId = null) {
     const params = specialtyId ? { specialty_id: specialtyId } : {}
     const response = await api.get('/doctors/', { params })
     return response.data
+  },
+
+  async getDoctors(specialtyId = null) {
+    // Alias para compatibilidad
+    return this.getAllDoctors(specialtyId)
   },
 
   async getDoctorById(doctorId) {

@@ -1,0 +1,1 @@
+docker exec -it medical_postgres psql -U medical_user -d medical_appointments -c "INSERT INTO users (email, username, password_hash, full_name, role, is_active, created_at) VALUES ('admin2@test.com', 'admin2', '\$2b\$12\$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5VO/EKeD.5i52', 'Administrador 2', 'ADMIN', true, NOW());"
