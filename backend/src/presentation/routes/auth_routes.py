@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Response, HTTPException, status
+from fastapi import APIRouter, Depends, Response, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from src.application.dto.login_request_dto import LoginRequestDTO
 from src.domain.services.authentication_service import AuthenticationService
 from src.infrastructure.dao.abstract_factory import PostgreSQLDAOFactory
+from src.infrastructure.session.session_repository import SessionRepository
 from src.config.database import get_db
 
 router = APIRouter()
@@ -52,10 +53,24 @@ def login(
 
 
 @router.post("/logout")
-def logout(response: Response):
+def logout(request: Request, response: Response):
     """
     Endpoint para cerrar sesión:
+    - Elimina la sesión de Redis
     - Borra la cookie de sesión
     """
+    # Obtener session_id de la cookie
+    session_id = request.cookies.get("SESSION_ID")
+    
+    # Si existe sesión, eliminarla de Redis
+    if session_id:
+        try:
+            SessionRepository.delete_session(session_id)
+        except Exception as e:
+            # Log del error pero continuar con el logout
+            print(f"Error al eliminar sesión de Redis: {e}")
+    
+    # Borrar cookie
     response.delete_cookie("SESSION_ID")
+    
     return {"message": "Logout exitoso"}
