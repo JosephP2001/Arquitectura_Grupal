@@ -1,169 +1,200 @@
 import sys
 import os
 
-# Agregar el directorio padre al path para poder importar src
+# Agregar el directorio raíz al path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from src.config.database import SessionLocal
+
+from src.config.database import get_session_local, init_db
 from src.infrastructure.models.postgresql.models import (
-    User, Patient, Doctor, Specialty, Schedule, UserRole
+    User, UserRole, Patient, Doctor, Specialty, Schedule, Appointment, AppointmentStatus
 )
-from datetime import time
+from datetime import datetime, time, timedelta
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def init_specialties(db: Session):
-    """Crear especialidades médicas"""
-    specialties = [
-        {"name": "Cardiología", "description": "Especialidad del corazón y sistema circulatorio"},
-        {"name": "Dermatología", "description": "Especialidad de la piel"},
-        {"name": "Pediatría", "description": "Especialidad de medicina infantil"},
-        {"name": "Neurología", "description": "Especialidad del sistema nervioso"},
-        {"name": "Traumatología", "description": "Especialidad de huesos y articulaciones"},
-        {"name": "Ginecología", "description": "Especialidad de la salud femenina"},
-        {"name": "Oftalmología", "description": "Especialidad de los ojos"},
-        {"name": "Psiquiatría", "description": "Especialidad de salud mental"},
-    ]
-    
-    for spec_data in specialties:
-        existing = db.query(Specialty).filter(Specialty.name == spec_data["name"]).first()
-        if not existing:
-            specialty = Specialty(**spec_data)
-            db.add(specialty)
-    
-    db.commit()
-    print(" Especialidades creadas")
 
-def init_test_users(db: Session):
-    """Crear usuarios de prueba"""
+def create_sample_data():
+    """Crea datos de prueba en la base de datos"""
     
-    # Crear paciente de prueba
-    if not db.query(User).filter(User.email == "paciente@test.com").first():
-        user_patient = User(
-            email="paciente@test.com",
-            username="paciente1",
-            password_hash=pwd_context.hash("password123"),
-            full_name="Juan Pérez",
-            role=UserRole.PATIENT,
-            is_active=True
-        )
-        db.add(user_patient)
-        db.commit()
-        
-        patient = Patient(
-            user_id=user_patient.id,
-            phone="0987654321",
-            address="Quito, Ecuador"
-        )
-        db.add(patient)
-        db.commit()
-        print(" Paciente de prueba creado: paciente1 / password123")
+    # Inicializar BD
+    init_db()
     
-    # Crear médicos de prueba
-    specialties = db.query(Specialty).all()
-    
-    doctors_data = [
-        {
-            "email": "doctor1@test.com",
-            "username": "doctor1",
-            "full_name": "Dra. María González",
-            "specialty": "Cardiología",
-            "license": "MD-001"
-        },
-        {
-            "email": "doctor2@test.com",
-            "username": "doctor2",
-            "full_name": "Dr. Carlos Rodríguez",
-            "specialty": "Pediatría",
-            "license": "MD-002"
-        },
-        {
-            "email": "doctor3@test.com",
-            "username": "doctor3",
-            "full_name": "Dra. Ana Martínez",
-            "specialty": "Dermatología",
-            "license": "MD-003"
-        }
-    ]
-    
-    for doc_data in doctors_data:
-        if not db.query(User).filter(User.email == doc_data["email"]).first():
-            specialty = db.query(Specialty).filter(Specialty.name == doc_data["specialty"]).first()
-            if not specialty:
-                continue
-            
-            user_doctor = User(
-                email=doc_data["email"],
-                username=doc_data["username"],
-                password_hash=pwd_context.hash("password123"),
-                full_name=doc_data["full_name"],
-                role=UserRole.DOCTOR,
-                is_active=True
-            )
-            db.add(user_doctor)
-            db.commit()
-            
-            doctor = Doctor(
-                user_id=user_doctor.id,
-                specialty_id=specialty.id,
-                license_number=doc_data["license"],
-                phone="0987654322"
-            )
-            db.add(doctor)
-            db.commit()
-            
-            # Crear horarios de ejemplo (Lunes a Viernes, 9:00 AM - 5:00 PM)
-            for day in range(5):  # 0=Lunes, 4=Viernes
-                schedule = Schedule(
-                    doctor_id=doctor.id,
-                    day_of_week=day,
-                    start_time=time(9, 0),
-                    end_time=time(17, 0),
-                    is_active=True
-                )
-                db.add(schedule)
-            
-            db.commit()
-            print(f" Médico de prueba creado: {doc_data['username']} / password123")
-    
-    # Crear admin de prueba
-    if not db.query(User).filter(User.email == "admin@test.com").first():
-        user_admin = User(
-            email="admin@test.com",
-            username="admin",
-            password_hash=pwd_context.hash("admin123"),
-            full_name="Administrador Sistema",
-            role=UserRole.ADMIN,
-            is_active=True
-        )
-        db.add(user_admin)
-        db.commit()
-        print(" Administrador creado: admin / admin123")
-
-def main():
-    """Función principal"""
-    print("🔄 Inicializando datos de prueba...")
-    db = SessionLocal()
+    # Crear sesión
+    SessionLocal = get_session_local()
+    db: Session = SessionLocal()
     
     try:
-        init_specialties(db)
-        init_test_users(db)
-        print("\n Inicialización completada exitosamente")
-        print("\n Credenciales de prueba:")
-        print("   Paciente: paciente1 / password123")
-        print("   Doctor 1: doctor1 / password123 (Cardiología)")
-        print("   Doctor 2: doctor2 / password123 (Pediatría)")
-        print("   Doctor 3: doctor3 / password123 (Dermatología)")
-        print("   Admin: admin / admin123")
+        print("🔧 Creando datos de prueba...")
+        
+        # 1. Crear especialidades
+        print("📋 Creando especialidades...")
+        specialties_data = [
+            {"name": "Cardiología", "description": "Especialista en corazón"},
+            {"name": "Dermatología", "description": "Especialista en piel"},
+            {"name": "Pediatría", "description": "Especialista en niños"},
+            {"name": "Traumatología", "description": "Especialista en huesos"},
+        ]
+        
+        specialties = []
+        for spec_data in specialties_data:
+            existing = db.query(Specialty).filter(Specialty.name == spec_data["name"]).first()
+            if not existing:
+                specialty = Specialty(**spec_data)
+                db.add(specialty)
+                specialties.append(specialty)
+            else:
+                specialties.append(existing)
+        
+        db.commit()
+        print(f"✅ {len(specialties)} especialidades creadas")
+        
+        # 2. Crear usuarios admin
+        print("👤 Creando usuario admin...")
+        admin_user = db.query(User).filter(User.username == "admin").first()
+        if not admin_user:
+            admin_user = User(
+                email="admin@hospital.com",
+                username="admin",
+                password_hash=pwd_context.hash("admin123"),
+                full_name="Administrador del Sistema",
+                role=UserRole.ADMIN,
+                is_active=True
+            )
+            db.add(admin_user)
+            db.commit()
+            print("✅ Usuario admin creado (usuario: admin, contraseña: admin123)")
+        
+        # 3. Crear pacientes de prueba
+        print("🏥 Creando pacientes de prueba...")
+        patients_data = [
+            {
+                "email": "paciente1@email.com",
+                "username": "paciente1",
+                "password": "pass123",
+                "full_name": "Juan Pérez",
+                "phone": "0998765432",
+                "address": "Av. Principal 123"
+            },
+            {
+                "email": "paciente2@email.com",
+                "username": "paciente2",
+                "password": "pass123",
+                "full_name": "María García",
+                "phone": "0987654321",
+                "address": "Calle Secundaria 456"
+            },
+        ]
+        
+        for patient_data in patients_data:
+            existing = db.query(User).filter(User.username == patient_data["username"]).first()
+            if not existing:
+                user = User(
+                    email=patient_data["email"],
+                    username=patient_data["username"],
+                    password_hash=pwd_context.hash(patient_data["password"]),
+                    full_name=patient_data["full_name"],
+                    role=UserRole.PATIENT,
+                    is_active=True
+                )
+                db.add(user)
+                db.commit()
+                
+                patient = Patient(
+                    user_id=user.id,
+                    phone=patient_data["phone"],
+                    address=patient_data["address"]
+                )
+                db.add(patient)
+                db.commit()
+        
+        print("✅ Pacientes creados")
+        
+        # 4. Crear médicos de prueba
+        print("👨‍⚕️ Creando médicos de prueba...")
+        doctors_data = [
+            {
+                "email": "doctor1@hospital.com",
+                "username": "doctor1",
+                "password": "doc123",
+                "full_name": "Dr. Carlos Rodríguez",
+                "specialty": "Cardiología",
+                "license": "LIC-001",
+                "phone": "0991234567"
+            },
+            {
+                "email": "doctor2@hospital.com",
+                "username": "doctor2",
+                "password": "doc123",
+                "full_name": "Dra. Ana Martínez",
+                "specialty": "Dermatología",
+                "license": "LIC-002",
+                "phone": "0992345678"
+            },
+        ]
+        
+        for doctor_data in doctors_data:
+            existing = db.query(User).filter(User.username == doctor_data["username"]).first()
+            if not existing:
+                user = User(
+                    email=doctor_data["email"],
+                    username=doctor_data["username"],
+                    password_hash=pwd_context.hash(doctor_data["password"]),
+                    full_name=doctor_data["full_name"],
+                    role=UserRole.DOCTOR,
+                    is_active=True
+                )
+                db.add(user)
+                db.commit()
+                
+                specialty = db.query(Specialty).filter(Specialty.name == doctor_data["specialty"]).first()
+                
+                doctor = Doctor(
+                    user_id=user.id,
+                    specialty_id=specialty.id,
+                    license_number=doctor_data["license"],
+                    phone=doctor_data["phone"]
+                )
+                db.add(doctor)
+                db.commit()
+                
+                # Crear horarios para el médico
+                for day in range(1, 6):  # Lunes a viernes
+                    schedule = Schedule(
+                        doctor_id=doctor.id,
+                        day_of_week=day,
+                        start_time=time(9, 0),
+                        end_time=time(17, 0),
+                        is_active=True
+                    )
+                    db.add(schedule)
+                db.commit()
+        
+        print("✅ Médicos creados con horarios")
+        
+        print("\n" + "="*50)
+        print("✅ DATOS DE PRUEBA CREADOS EXITOSAMENTE")
+        print("="*50)
+        print("\n📝 Credenciales de acceso:")
+        print("\nAdministrador:")
+        print("  Usuario: admin")
+        print("  Contraseña: admin123")
+        print("\nPacientes:")
+        print("  Usuario: paciente1 / Contraseña: pass123")
+        print("  Usuario: paciente2 / Contraseña: pass123")
+        print("\nMédicos:")
+        print("  Usuario: doctor1 / Contraseña: doc123")
+        print("  Usuario: doctor2 / Contraseña: doc123")
+        print("="*50)
+        
     except Exception as e:
-        print(f" Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"❌ Error creando datos: {e}")
         db.rollback()
     finally:
         db.close()
 
+
 if __name__ == "__main__":
-    main()
+    create_sample_data()

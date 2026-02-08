@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.config.database import get_db, get_mongodb
-from src.infrastructure.models.postgresql.models import Appointment, Patient, Doctor, User
-from src.infrastructure.dao.mongodb.medical_record_dao_impl import MedicalRecordDAOMongo
+from src.infrastructure.models.postgresql.models import (
+    Appointment, Patient, Doctor, User, AppointmentStatus
+)
 from src.presentation.middlewares.session_auth_middleware import get_current_user
 from typing import List
 from pydantic import BaseModel
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -36,21 +38,17 @@ def get_patient_complete_report(
     db: Session = Depends(get_db)
 ):
     """
-    Reporte completo de un paciente combinando datos de PostgreSQL y MongoDB
-    - Datos del paciente (PostgreSQL)
-    - Historial de citas (PostgreSQL)
-    - Historiales médicos (MongoDB)
+    Reporte completo de un paciente combinando PostgreSQL y MongoDB
     """
-    # Obtener datos del paciente desde PostgreSQL
+    # PostgreSQL: Datos del paciente
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
-        from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Paciente no encontrado"
         )
     
-    # Obtener citas del paciente
+    # PostgreSQL: Citas del paciente
     appointments = db.query(Appointment).filter(
         Appointment.patient_id == patient_id
     ).order_by(Appointment.appointment_date.desc()).all()
@@ -67,16 +65,22 @@ def get_patient_complete_report(
         for apt in appointments
     ]
     
-    # Obtener historiales médicos desde MongoDB
-    mongodb = get_mongodb()
-    medical_record_dao = MedicalRecordDAOMongo(mongodb)
-    medical_records = medical_record_dao.get_by_patient(patient_id)
-    
-    # Convertir ObjectId a string para serialización
-    for record in medical_records:
-        record['_id'] = str(record['_id'])
-        if 'created_at' in record:
-            record['created_at'] = record['created_at'].isoformat()
+    # MongoDB: Historiales médicos
+    try:
+        mongodb = get_mongodb()
+        medical_records = list(mongodb.medical_records.find(
+            {"patient_id": patient_id}
+        ).sort("created_at", -1))
+        
+        # Convertir ObjectId y datetime a string
+        for record in medical_records:
+            record['_id'] = str(record['_id'])
+            if 'created_at' in record:
+                if isinstance(record['created_at'], datetime):
+                    record['created_at'] = record['created_at'].isoformat()
+    except Exception as e:
+        print(f"⚠️ MongoDB no disponible: {e}")
+        medical_records = []
     
     return PatientCompleteReport(
         patient_id=patient.id,
@@ -96,20 +100,14 @@ def get_system_report(
 ):
     """
     Reporte general del sistema combinando PostgreSQL y MongoDB
-    - Estadísticas de usuarios (PostgreSQL)
-    - Estadísticas de citas (PostgreSQL)
-    - Total de registros médicos (MongoDB)
-    - Actividad reciente del sistema (MongoDB)
+    Demuestra integración de múltiples bases de datos
     """
-    from src.infrastructure.models.postgresql.models import AppointmentStatus
-    from src.infrastructure.dao.mongodb.log_dao_impl import LogDAOMongo
-    
-    # Datos desde PostgreSQL
+    # PostgreSQL: Estadísticas de usuarios y citas
     total_patients = db.query(Patient).count()
     total_doctors = db.query(Doctor).count()
     total_appointments = db.query(Appointment).count()
     
-    # Contar citas por estado
+    # PostgreSQL: Contar citas por estado
     appointments_by_status = {}
     for status in AppointmentStatus:
         count = db.query(Appointment).filter(
@@ -117,19 +115,27 @@ def get_system_report(
         ).count()
         appointments_by_status[status.value] = count
     
-    # Datos desde MongoDB
-    mongodb = get_mongodb()
-    total_medical_records = mongodb.medical_records.count_documents({})
-    
-    # Obtener actividad reciente de logs
-    log_dao = LogDAOMongo(mongodb)
-    recent_logs = log_dao.get_recent(hours=24, limit=10)
-    
-    # Convertir ObjectId y datetime a string
-    for log in recent_logs:
-        log['_id'] = str(log['_id'])
-        if 'timestamp' in log:
-            log['timestamp'] = log['timestamp'].isoformat()
+    # MongoDB: Total de registros médicos y actividad reciente
+    try:
+        mongodb = get_mongodb()
+        total_medical_records = mongodb.medical_records.count_documents({})
+        
+        # Obtener logs recientes de las últimas 24 horas
+        yesterday = datetime.utcnow() - timedelta(hours=24)
+        recent_logs = list(mongodb.logs.find(
+            {"timestamp": {"$gte": yesterday}}
+        ).sort("timestamp", -1).limit(10))
+        
+        # Convertir ObjectId y datetime a string
+        for log in recent_logs:
+            log['_id'] = str(log['_id'])
+            if 'timestamp' in log:
+                if isinstance(log['timestamp'], datetime):
+                    log['timestamp'] = log['timestamp'].isoformat()
+    except Exception as e:
+        print(f"⚠️ MongoDB no disponible: {e}")
+        total_medical_records = 0
+        recent_logs = []
     
     return SystemReport(
         total_patients=total_patients,
@@ -148,20 +154,16 @@ def get_doctor_performance_report(
 ):
     """
     Reporte de desempeño del médico combinando PostgreSQL y MongoDB
-    - Citas atendidas (PostgreSQL)
-    - Registros médicos creados (MongoDB)
     """
-    # Datos del médico
+    # PostgreSQL: Datos del médico
     doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not doctor:
-        from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Médico no encontrado"
         )
     
-    # Estadísticas de citas
-    from src.infrastructure.models.postgresql.models import AppointmentStatus
+    # PostgreSQL: Estadísticas de citas
     total_appointments = db.query(Appointment).filter(
         Appointment.doctor_id == doctor_id
     ).count()
@@ -171,21 +173,26 @@ def get_doctor_performance_report(
         Appointment.status == AppointmentStatus.COMPLETED
     ).count()
     
-    # Registros médicos creados por este doctor
-    mongodb = get_mongodb()
-    medical_records_count = mongodb.medical_records.count_documents({
-        "doctor_id": doctor_id
-    })
-    
-    # Obtener algunos registros médicos recientes
-    recent_records = list(mongodb.medical_records.find(
-        {"doctor_id": doctor_id}
-    ).sort("created_at", -1).limit(5))
-    
-    for record in recent_records:
-        record['_id'] = str(record['_id'])
-        if 'created_at' in record:
-            record['created_at'] = record['created_at'].isoformat()
+    # MongoDB: Registros médicos creados por este doctor
+    try:
+        mongodb = get_mongodb()
+        medical_records_count = mongodb.medical_records.count_documents({
+            "doctor_id": doctor_id
+        })
+        
+        recent_records = list(mongodb.medical_records.find(
+            {"doctor_id": doctor_id}
+        ).sort("created_at", -1).limit(5))
+        
+        for record in recent_records:
+            record['_id'] = str(record['_id'])
+            if 'created_at' in record:
+                if isinstance(record['created_at'], datetime):
+                    record['created_at'] = record['created_at'].isoformat()
+    except Exception as e:
+        print(f"⚠️ MongoDB no disponible: {e}")
+        medical_records_count = 0
+        recent_records = []
     
     return {
         "doctor_id": doctor.id,

@@ -1,98 +1,184 @@
-from fastapi import APIRouter, Depends, Response, HTTPException, Request, status
-from sqlalchemy.orm import Session
+from typing import Optional, Dict
+from passlib.context import CryptContext
 
-from src.application.dto.login_request_dto import LoginRequestDTO
-from src.domain.services.authentication_service import AuthenticationService
-from src.infrastructure.dao.abstract_factory import PostgreSQLDAOFactory
+from src.infrastructure.dao.interfaces.user_dao import IUserDAO
+from src.infrastructure.models.postgresql.models import User, UserRole, Patient, Doctor
 from src.infrastructure.session.session_repository import SessionRepository
-from src.infrastructure.models.postgresql.models import User
-from src.presentation.middlewares.session_auth_middleware import get_current_user
-from src.config.database import get_db
+from src.infrastructure.observability.logger import get_logger
 
-router = APIRouter()
+logger = get_logger("authentication_service")
 
-
-# Inyección de dependencia: crea AuthenticationService con el DAO
-def get_auth_service(db: Session = Depends(get_db)) -> AuthenticationService:
-    factory = PostgreSQLDAOFactory(db)
-    user_dao = factory.create_user_dao()
-    return AuthenticationService(user_dao)
+# Configuración de hashing de contraseñas
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-@router.post("/login")
-def login(
-    data: LoginRequestDTO,
-    response: Response,
-    auth_service: AuthenticationService = Depends(get_auth_service)
-):
+class AuthenticationService:
     """
-    Endpoint de login:
-    - Valida credenciales
-    - Crea cookie de sesión
-    - Retorna mensaje, session_id y datos del usuario
+    Servicio de autenticación que maneja login, registro y gestión de usuarios
     """
-    # Ejecuta la lógica de autenticación
-    result = auth_service.authenticate(data.username, data.password)
 
-    # Si las credenciales son inválidas
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas"
+    def __init__(self, user_dao: IUserDAO):
+        self.user_dao = user_dao
+
+    def authenticate(self, username: str, password: str) -> Optional[Dict]:
+        """
+        Autentica un usuario y crea una sesión
+        Retorna dict con session_id y datos del usuario, o None si falla
+        """
+        logger.info(
+            "Authentication attempt",
+            extra={"extra": {"username": username}}
         )
 
-    # Crea cookie de sesión segura
-    response.set_cookie(
-        key="SESSION_ID",
-        value=result["session_id"],
-        httponly=True,
-        secure=False,  # Cambiar a True en producción con HTTPS
-        samesite="lax"
-    )
+        # Buscar usuario por username
+        user = self.user_dao.get_by_username(username)
+        
+        if not user:
+            logger.warning(
+                "User not found",
+                extra={"extra": {"username": username}}
+            )
+            return None
 
-    # Retorna mensaje, session_id y datos del usuario
-    return {
-        "message": "Login exitoso",
-        "session_id": result["session_id"],
-        "user": result["user"]  # Incluye datos del usuario
-    }
+        # Verificar contraseña
+        if not self._verify_password(password, user.password_hash):
+            logger.warning(
+                "Invalid password",
+                extra={"extra": {"username": username}}
+            )
+            return None
 
+        # Verificar que el usuario esté activo
+        if not user.is_active:
+            logger.warning(
+                "Inactive user",
+                extra={"extra": {"username": username}}
+            )
+            return None
 
-@router.get("/me")
-def get_current_user_info(
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Obtiene información del usuario autenticado actual
-    """
-    return {
-        "id": current_user.id,
-        "username": current_user.username,
-        "email": current_user.email,
-        "full_name": current_user.full_name,
-        "role": current_user.role.value  # Convertir enum a string
-    }
+        # Crear sesión en Redis
+        session_id = SessionRepository.create_session(
+            user_id=str(user.id),
+            role=user.role.value
+        )
 
+        logger.info(
+            "Authentication successful",
+            extra={
+                "extra": {
+                    "user_id": user.id,
+                    "username": username,
+                    "session_id": session_id
+                }
+            }
+        )
 
-@router.post("/logout")
-def logout(request: Request, response: Response):
-    """
-    Endpoint para cerrar sesión:
-    - Elimina la sesión de Redis
-    - Borra la cookie de sesión
-    """
-    # Obtener session_id de la cookie
-    session_id = request.cookies.get("SESSION_ID")
-    
-    # Si existe sesión, eliminarla de Redis
-    if session_id:
-        try:
-            SessionRepository.delete_session(session_id)
-        except Exception as e:
-            # Log del error pero continuar con el logout
-            print(f"Error al eliminar sesión de Redis: {e}")
-    
-    # Borrar cookie
-    response.delete_cookie("SESSION_ID")
-    
-    return {"message": "Logout exitoso"}
+        return {
+            "session_id": session_id,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "full_name": user.full_name,
+                "role": user.role.value
+            }
+        }
+
+    def register_user(self, user_data: Dict, db_session) -> Dict:
+        """
+        Registra un nuevo usuario (paciente o médico)
+        """
+        logger.info(
+            "User registration attempt",
+            extra={
+                "extra": {
+                    "username": user_data.get("username"),
+                    "email": user_data.get("email"),
+                    "role": user_data.get("role")
+                }
+            }
+        )
+
+        # Verificar si el email ya existe
+        existing_user = self.user_dao.get_by_email(user_data["email"])
+        if existing_user:
+            raise ValueError("El email ya está registrado")
+
+        # Verificar si el username ya existe
+        existing_user = self.user_dao.get_by_username(user_data["username"])
+        if existing_user:
+            raise ValueError("El nombre de usuario ya está en uso")
+
+        # Hashear contraseña
+        password_hash = self._hash_password(user_data["password"])
+
+        # Crear usuario
+        user = User(
+            email=user_data["email"],
+            username=user_data["username"],
+            password_hash=password_hash,
+            full_name=user_data["full_name"],
+            role=UserRole(user_data["role"]),
+            is_active=True
+        )
+
+        # Guardar usuario
+        created_user = self.user_dao.create(user)
+
+        # Crear perfil según el rol
+        if user_data["role"] == "patient":
+            patient = Patient(
+                user_id=created_user.id,
+                phone=user_data.get("phone"),
+                address=user_data.get("address")
+            )
+            db_session.add(patient)
+            db_session.commit()
+            
+        elif user_data["role"] == "doctor":
+            doctor = Doctor(
+                user_id=created_user.id,
+                specialty_id=user_data["specialty_id"],
+                license_number=user_data["license_number"],
+                phone=user_data.get("phone")
+            )
+            db_session.add(doctor)
+            db_session.commit()
+
+        logger.info(
+            "User registered successfully",
+            extra={
+                "extra": {
+                    "user_id": created_user.id,
+                    "username": created_user.username,
+                    "role": created_user.role.value
+                }
+            }
+        )
+
+        # Crear sesión automáticamente
+        session_id = SessionRepository.create_session(
+            user_id=str(created_user.id),
+            role=created_user.role.value
+        )
+
+        return {
+            "session_id": session_id,
+            "user": {
+                "id": created_user.id,
+                "username": created_user.username,
+                "email": created_user.email,
+                "full_name": created_user.full_name,
+                "role": created_user.role.value
+            }
+        }
+
+    @staticmethod
+    def _hash_password(password: str) -> str:
+        """Hash de contraseña usando bcrypt"""
+        return pwd_context.hash(password)
+
+    @staticmethod
+    def _verify_password(plain_password: str, hashed_password: str) -> bool:
+        """Verificar contraseña"""
+        return pwd_context.verify(plain_password, hashed_password)

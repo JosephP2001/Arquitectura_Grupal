@@ -1,7 +1,7 @@
 import api from './api'
 
 const doctorService = {
-  async getAllDoctors(specialtyId = null) {
+  async getDoctors(specialtyId = null) {
     const params = specialtyId ? { specialty_id: specialtyId } : {}
     const response = await api.get('/doctors/', { params })
     return response.data
