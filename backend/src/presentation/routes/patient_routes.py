@@ -5,7 +5,7 @@ from src.infrastructure.models.postgresql.models import Patient, User, UserRole,
 from src.presentation.middlewares.session_auth_middleware import get_current_user
 from src.infrastructure.dao.mongodb.medical_record_dao_impl import MedicalRecordDAOMongo
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 router = APIRouter()
 
@@ -13,8 +13,8 @@ class PatientResponse(BaseModel):
     id: int
     full_name: str
     email: str
-    phone: str = None
-    address: str = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
     total_appointments: int
     pending_appointments: int
     confirmed_appointments: int
