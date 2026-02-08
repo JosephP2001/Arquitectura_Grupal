@@ -20,26 +20,33 @@ const Login = () => {
     setLoading(true)
 
     try {
+      // El backend retorna { message, session_id }
+      // La cookie SESSION_ID se establece automáticamente
       const response = await authService.login(formData.username, formData.password)
       
-      console.log('✅ Login exitoso:', response.user.username)
-      console.log('🔑 Token recibido:', response.access_token.substring(0, 20) + '...')
+      console.log('✅ Login exitoso')
+      console.log('🔑 Session ID:', response.session_id)
       
-      // Guardar en contexto
-      login(response.access_token, response.user)
-      
-      // Verificar que se guardó en localStorage
-      const savedToken = localStorage.getItem('token')
-      console.log('💾 Token en localStorage:', savedToken ? 'SÍ' : 'NO')
-      
-      if (!savedToken) {
-        throw new Error('No se pudo guardar el token')
+      // Obtener datos del usuario actual
+      // NOTA: Necesitas implementar un endpoint /auth/me en el backend
+      // Por ahora, asumimos que el usuario es admin
+      const user = {
+        username: formData.username,
+        role: 'admin' // Esto debería venir del backend
       }
       
+      // Guardar en contexto (sin token, solo user)
+      login(null, user)
+      
+      // Guardar usuario en localStorage
+      localStorage.setItem('user', JSON.stringify(user))
+      
+      console.log('💾 Usuario guardado en localStorage')
+      
       // Redirigir según el rol
-      if (response.user.role === 'patient') {
+      if (user.role === 'patient') {
         navigate('/patient/dashboard', { replace: true })
-      } else if (response.user.role === 'doctor') {
+      } else if (user.role === 'doctor') {
         navigate('/doctor/dashboard', { replace: true })
       } else {
         navigate('/', { replace: true })

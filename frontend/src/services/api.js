@@ -6,25 +6,9 @@ const api = axios.create({
   baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json'
-  }
-})
-
-// Interceptor para agregar token a las peticiones
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-      console.log('🔐 Enviando request a:', config.url, 'con token')
-    } else {
-      console.warn('⚠️ No hay token para:', config.url)
-    }
-    return config
   },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
+  withCredentials: true // CRÍTICO: Permite envío automático de cookies
+})
 
 // Interceptor para manejar errores
 api.interceptors.response.use(
@@ -33,12 +17,11 @@ api.interceptors.response.use(
     const status = error.response?.status
     
     if (status === 401) {
-      console.error('❌ Error 401 - Token inválido o expirado')
+      console.error('❌ Error 401 - No autenticado')
       console.error('Detalle:', error.response?.data?.detail)
       
       // Solo limpiar si no es la ruta de login
       if (error.config.url !== '/auth/login') {
-        localStorage.removeItem('token')
         localStorage.removeItem('user')
         window.location.href = '/login'
       }
