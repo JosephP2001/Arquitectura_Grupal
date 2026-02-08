@@ -1,38 +1,33 @@
 import redis
 from src.infrastructure.registry.service_registry import service_registry
+import os
 
 
-# --------------------------------------------------
-# Redis Client Initialization
-# --------------------------------------------------
 _redis_client = None
 
-def _init_redis():
-    """Inicialización lazy para Redis, consulta al Service Registry"""
+
+def get_redis_client():
+    """Obtiene cliente Redis usando Service Registry"""
     global _redis_client
     
     if _redis_client is not None:
-        return
+        return _redis_client
     
-    # Obtenemos los detalles de Redis del Service Registry
-    redis_srv = service_registry.get("redis")
+    try:
+        redis_service = service_registry.get("redis")
+        host = redis_service["host"]
+        port = redis_service["port"]
+    except:
+        host = os.getenv("REDIS_HOST", "localhost")
+        port = int(os.getenv("REDIS_PORT", 6379))
     
-    if not redis_srv:
-        raise RuntimeError("❌ Redis service not registered in Service Registry")
-
-    # Creamos el cliente Redis
     _redis_client = redis.Redis(
-        host=redis_srv["host"],
-        port=redis_srv["port"],
-        decode_responses=True
+        host=host,
+        port=port,
+        db=0,
+        decode_responses=True,
+        socket_connect_timeout=5,
+        socket_timeout=5
     )
-
-
-# --------------------------------------------------
-# Dependency: Obtenemos el cliente Redis
-# --------------------------------------------------
-def get_redis_client():
-    """Dependency para obtener el cliente Redis"""
-    if _redis_client is None:
-        _init_redis()
+    
     return _redis_client

@@ -20,21 +20,11 @@ const Login = () => {
     setLoading(true)
 
     try {
-      // 1. Login - establece cookie SESSION_ID automáticamente
-      const loginResponse = await authService.login(formData.username, formData.password)
-      console.log('✅ Login exitoso')
-      console.log('🔑 Session ID:', loginResponse.session_id)
+      const response = await authService.login(formData.username, formData.password)
       
-      // 2. El backend ahora retorna el objeto user completo en la respuesta
-      const user = loginResponse.user
-      console.log('👤 Usuario:', user)
-      
-      // 3. Guardar en contexto
+      const user = response.user
       login(user)
       
-      console.log('💾 Usuario guardado en localStorage')
-      
-      // 4. Redirigir según el rol
       if (user.role === 'patient') {
         navigate('/patient/dashboard', { replace: true })
       } else if (user.role === 'doctor') {
@@ -43,8 +33,7 @@ const Login = () => {
         navigate('/', { replace: true })
       }
     } catch (err) {
-      console.error('❌ Error en login:', err)
-      setError(err.response?.data?.detail || err.message || 'Error al iniciar sesión')
+      setError(err.response?.data?.detail || 'Error al iniciar sesión')
     } finally {
       setLoading(false)
     }

@@ -10,7 +10,7 @@ from src.infrastructure.observability.logger import get_logger
 logger = get_logger("user_dao")
 
 
-class UserDAO(IUserDAO):
+class UserDAOPostgreSQL(IUserDAO):
     """
     Implementación del DAO de Usuario para PostgreSQL usando SQLAlchemy
     """

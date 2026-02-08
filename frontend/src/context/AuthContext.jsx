@@ -1,5 +1,4 @@
 import { createContext, useState, useContext, useEffect } from 'react'
-import authService from '../services/authService'
 
 const AuthContext = createContext(null)
 
@@ -8,20 +7,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Intentar obtener usuario actual desde el backend
-    authService.getCurrentUser()
-      .then(userData => {
-        setUser(userData)
-        localStorage.setItem('user', JSON.stringify(userData))
-      })
-      .catch((err) => {
-        console.log('No hay sesión activa')
-        setUser(null)
+    // Cargar usuario desde localStorage al inicio
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser))
+      } catch (err) {
+        console.error('Error parseando usuario:', err)
         localStorage.removeItem('user')
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+      }
+    }
+    setLoading(false)
   }, [])
 
   // Método para establecer el usuario después del login
@@ -31,9 +27,13 @@ export const AuthProvider = ({ children }) => {
   }
 
   const logout = async () => {
+    // Llamar al backend para eliminar la sesión de Redis
     try {
-      await authService.logout()
-      console.log('✅ Logout exitoso')
+      const response = await fetch('http://localhost:8000/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include' // Importante: envía la cookie
+      })
+      console.log('✅ Logout response:', response.status)
     } catch (err) {
       console.error('❌ Error en logout:', err)
     }

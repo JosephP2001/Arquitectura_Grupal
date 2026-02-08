@@ -1,40 +1,44 @@
-from typing import List, Optional
+from typing import List
 from pymongo.database import Database
-from src.infrastructure.models.mongodb.schemas import MedicalRecord
-from bson import ObjectId
+from datetime import datetime
+
 
 class MedicalRecordDAOMongo:
-    """DAO para gestionar historiales médicos en MongoDB"""
+    """DAO para gestionar registros médicos en MongoDB"""
     
     def __init__(self, mongodb: Database):
         self.collection = mongodb.medical_records
     
-    def create(self, record: MedicalRecord) -> str:
-        """Crear un nuevo historial médico"""
-        result = self.collection.insert_one(record.to_dict())
+    def create(self, record: dict) -> str:
+        """Crear un nuevo registro médico"""
+        if 'created_at' not in record:
+            record['created_at'] = datetime.utcnow()
+        
+        result = self.collection.insert_one(record)
         return str(result.inserted_id)
     
-    def get_by_id(self, record_id: str) -> Optional[dict]:
-        """Obtener historial por ID"""
-        return self.collection.find_one({"_id": ObjectId(record_id)})
-    
     def get_by_patient(self, patient_id: int) -> List[dict]:
-        """Obtener todos los historiales de un paciente"""
-        return list(self.collection.find({"patient_id": patient_id}).sort("created_at", -1))
-    
-    def get_by_appointment(self, appointment_id: int) -> Optional[dict]:
-        """Obtener historial por cita"""
-        return self.collection.find_one({"appointment_id": appointment_id})
-    
-    def update(self, record_id: str, update_data: dict) -> bool:
-        """Actualizar historial médico"""
-        result = self.collection.update_one(
-            {"_id": ObjectId(record_id)},
-            {"$set": update_data}
+        """Obtener registros médicos de un paciente"""
+        records = list(
+            self.collection
+            .find({"patient_id": patient_id})
+            .sort("created_at", -1)
         )
-        return result.modified_count > 0
+        
+        for record in records:
+            record['_id'] = str(record['_id'])
+            if isinstance(record.get('created_at'), datetime):
+                record['created_at'] = record['created_at'].isoformat()
+        
+        return records
     
-    def delete(self, record_id: str) -> bool:
-        """Eliminar historial médico"""
-        result = self.collection.delete_one({"_id": ObjectId(record_id)})
-        return result.deleted_count > 0
+    def get_by_appointment(self, appointment_id: int) -> dict:
+        """Obtener registro médico de una cita"""
+        record = self.collection.find_one({"appointment_id": appointment_id})
+        
+        if record:
+            record['_id'] = str(record['_id'])
+            if isinstance(record.get('created_at'), datetime):
+                record['created_at'] = record['created_at'].isoformat()
+        
+        return record
