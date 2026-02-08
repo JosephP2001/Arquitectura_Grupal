@@ -1,3 +1,5 @@
+# backend/scripts/init_data.py
+
 import sys
 import os
 
@@ -14,6 +16,14 @@ from src.infrastructure.models.postgresql.models import (
 from datetime import datetime, time, timedelta
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    """Hash password con límite de 72 bytes para bcrypt"""
+    # Truncar a 72 bytes para evitar error de bcrypt
+    if len(password.encode('utf-8')) > 72:
+        password = password[:72]
+    return pwd_context.hash(password)
 
 
 def create_sample_data():
@@ -58,7 +68,7 @@ def create_sample_data():
             admin_user = User(
                 email="admin@hospital.com",
                 username="admin",
-                password_hash=pwd_context.hash("admin123"),
+                password_hash=hash_password("admin123"),
                 full_name="Administrador del Sistema",
                 role=UserRole.ADMIN,
                 is_active=True
@@ -94,7 +104,7 @@ def create_sample_data():
                 user = User(
                     email=patient_data["email"],
                     username=patient_data["username"],
-                    password_hash=pwd_context.hash(patient_data["password"]),
+                    password_hash=hash_password(patient_data["password"]),
                     full_name=patient_data["full_name"],
                     role=UserRole.PATIENT,
                     is_active=True
@@ -141,7 +151,7 @@ def create_sample_data():
                 user = User(
                     email=doctor_data["email"],
                     username=doctor_data["username"],
-                    password_hash=pwd_context.hash(doctor_data["password"]),
+                    password_hash=hash_password(doctor_data["password"]),
                     full_name=doctor_data["full_name"],
                     role=UserRole.DOCTOR,
                     is_active=True
@@ -191,6 +201,8 @@ def create_sample_data():
         
     except Exception as e:
         print(f"❌ Error creando datos: {e}")
+        import traceback
+        traceback.print_exc()
         db.rollback()
     finally:
         db.close()
