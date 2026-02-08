@@ -4,14 +4,14 @@ import { Navigate, Link } from 'react-router-dom'
 const Dashboard = () => {
   const { user } = useAuth()
 
-  // Redirigir según el rol del usuario
+  // Redirigir SOLO pacientes y doctores a sus dashboards específicos
   if (user?.role === 'patient') {
     return <Navigate to="/patient/dashboard" replace />
   } else if (user?.role === 'doctor') {
     return <Navigate to="/doctor/dashboard" replace />
   }
 
-  // Panel para admin y otros roles
+  // Panel para admin (SIN redirección)
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-md p-6">

@@ -10,6 +10,13 @@ const Navbar = () => {
     navigate('/login')
   }
 
+  // Determinar ruta de dashboard según el rol
+  const getDashboardRoute = () => {
+    if (user?.role === 'patient') return '/patient/dashboard'
+    if (user?.role === 'doctor') return '/doctor/dashboard'
+    return '/' // Admin va a la raíz (Dashboard.jsx)
+  }
+
   return (
     <nav className="bg-blue-600 text-white shadow-lg">
       <div className="container mx-auto px-4">
@@ -25,17 +32,19 @@ const Navbar = () => {
                   Hola, {user?.full_name} ({user?.role})
                 </span>
                 <Link
-                  to={user?.role === 'patient' ? '/patient/dashboard' : '/doctor/dashboard'}
+                  to={getDashboardRoute()}
                   className="hover:bg-blue-700 px-3 py-2 rounded"
                 >
                   Dashboard
                 </Link>
-                <Link
-                  to="/reports"
-                  className="hover:bg-blue-700 px-3 py-2 rounded"
-                >
-                  Reportes
-                </Link>
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/reports"
+                    className="hover:bg-blue-700 px-3 py-2 rounded"
+                  >
+                    Reportes
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded"
