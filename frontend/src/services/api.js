@@ -20,11 +20,9 @@ api.interceptors.response.use(
       console.error('❌ Error 401 - No autenticado')
       console.error('Detalle:', error.response?.data?.detail)
       
-      // Solo limpiar si no es la ruta de login
-      if (error.config.url !== '/auth/login') {
-        localStorage.removeItem('user')
-        window.location.href = '/login'
-      }
+      // NO redirigir automáticamente - dejar que cada componente maneje el error
+      // Solo limpiar localStorage
+      localStorage.removeItem('user')
     }
     
     if (status === 403) {

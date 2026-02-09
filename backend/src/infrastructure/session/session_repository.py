@@ -1,8 +1,8 @@
 import uuid
 from typing import Optional, Dict
+from pybreaker import CircuitBreaker
 
 from src.infrastructure.cache.redis_client import get_redis_client
-from src.infrastructure.resilience.circuit_breaker import CircuitBreaker
 from src.infrastructure.observability.logger import get_logger
 
 

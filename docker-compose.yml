@@ -1,6 +1,10 @@
 version: "3.8"
 
 services:
+  # ===========================================
+  # BASES DE DATOS
+  # ===========================================
+  
   postgres:
     image: postgres:15-alpine
     container_name: medical_postgres
@@ -14,6 +18,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - medical_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medical_user -d medical_appointments"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   mongodb:
     image: mongo:7
@@ -28,6 +38,12 @@ services:
       - mongo_data:/data/db
     networks:
       - medical_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -39,36 +55,92 @@ services:
     networks:
       - medical_network
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
+  # ===========================================
+  # BACKEND - FastAPI
+  # ===========================================
+  
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: medical_backend
     environment:
+      # Bases de datos
       DATABASE_URL: postgresql://medical_user:medical_pass@postgres:5432/medical_appointments
       MONGODB_URL: mongodb://mongo_user:mongo_pass@mongodb:27017/
+      MONGODB_DB_NAME: medical_records
       REDIS_URL: redis://redis:6379/0
+      
+      # Sesiones
       SESSION_EXPIRE_MINUTES: 60
+      
+      # Notificaciones (configurar con tus credenciales reales)
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-your_sendgrid_api_key_here}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-notifications@medical-system.com}
+      NOTIFICATION_EMAIL: ${NOTIFICATION_EMAIL:-admin@medical-system.com}
+      
+      # Twilio (opcional)
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
+      
+      # Monitoreo
+      HEALTH_CHECK_INTERVAL: 30
+      HEARTBEAT_INTERVAL: 10
+      FAILURE_THRESHOLD: 3
+      
+      # Circuit Breaker
+      CIRCUIT_BREAKER_FAILURE_THRESHOLD: 5
+      CIRCUIT_BREAKER_TIMEOUT: 30
+      CIRCUIT_BREAKER_HALF_OPEN_REQUESTS: 3
+      
+      # Red LAN (IMPORTANTE: cambiar según tu red)
+      LAN_HOST_IP: ${LAN_HOST_IP:-192.168.1.7}
+      
+      # Desarrollo
+      DEBUG: "True"
+      LOG_LEVEL: INFO
+      
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - mongodb
-      - redis
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./backend:/app
     networks:
       - medical_network
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # ===========================================
+  # FRONTEND - React + Vite
+  # ===========================================
+  
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: medical_frontend
     environment:
-      VITE_API_URL: http://localhost:8000
+      # IMPORTANTE: Cambiar esta IP según tu red LAN
+      VITE_API_URL: http://${LAN_HOST_IP:-192.168.1.7}:8000
     ports:
       - "5173:5173"
     depends_on:
@@ -79,12 +151,27 @@ services:
     networks:
       - medical_network
     command: npm run dev -- --host
+    restart: unless-stopped
+
+# ===========================================
+# VOLÚMENES
+# ===========================================
 
 volumes:
   postgres_data:
+    driver: local
   mongo_data:
+    driver: local
   redis_data:
+    driver: local
+
+# ===========================================
+# REDES
+# ===========================================
 
 networks:
   medical_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

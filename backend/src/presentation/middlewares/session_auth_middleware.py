@@ -1,10 +1,10 @@
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
+from pybreaker import CircuitBreakerError
 
 from src.config.database import get_db
 from src.infrastructure.session.session_repository import SessionRepository
 from src.infrastructure.models.postgresql.models import User
-from src.infrastructure.resilience.circuit_breaker import CircuitBreakerOpen
 
 
 def get_current_user(
@@ -18,7 +18,7 @@ def get_current_user(
     - PostgreSQL sin breaker en este nivel
     """
 
-    #Leer cookie de sesión
+    # Leer cookie de sesión
     session_id = request.cookies.get("SESSION_ID")
     if not session_id:
         raise HTTPException(
@@ -26,16 +26,16 @@ def get_current_user(
             detail="No autenticado"
         )
 
-    #Obtener sesión desde Redis (Circuit Breaker)
+    # Obtener sesión desde Redis (Circuit Breaker)
     try:
         session_data = SessionRepository.get_session(session_id)
-    except CircuitBreakerOpen:
+    except CircuitBreakerError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Servicio de sesiones no disponible temporalmente"
         )
 
-    #Validar sesión
+    # Validar sesión
     if not session_data or "user_id" not in session_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

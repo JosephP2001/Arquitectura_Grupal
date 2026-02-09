@@ -43,12 +43,15 @@ def login(
         )
 
     # Crea cookie de sesión segura
+    # CONFIGURACIÓN PARA DESARROLLO LOCAL
     response.set_cookie(
         key="SESSION_ID",
         value=result["session_id"],
-        httponly=True,
-        secure=False,  # Cambiar a True en producción con HTTPS
-        samesite="lax"
+        httponly=False,  # Debe ser False para desarrollo local
+        secure=False,  # HTTP local
+        samesite="lax",  # Funciona en localhost
+        max_age=3600,  # 1 hora
+        path="/"  # Importante: disponible en todas las rutas
     )
 
     # Retorna mensaje, session_id y datos del usuario
@@ -84,9 +87,11 @@ def register(
         response.set_cookie(
             key="SESSION_ID",
             value=result["session_id"],
-            httponly=True,
+            httponly=False,  # Debe ser False para desarrollo local
             secure=False,
-            samesite="lax"
+            samesite="lax",  # Funciona en localhost
+            max_age=3600,
+            path="/"
         )
         
         return {
@@ -160,7 +165,11 @@ def logout(request: Request, response: Response):
             # Log del error pero continuar con el logout
             print(f"Error al eliminar sesión de Redis: {e}")
     
-    # Borrar cookie
-    response.delete_cookie("SESSION_ID")
+    # Borrar cookie con los mismos parámetros
+    response.delete_cookie(
+        key="SESSION_ID",
+        path="/",
+        samesite="lax"
+    )
     
     return {"message": "Logout exitoso"}

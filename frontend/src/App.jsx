@@ -8,6 +8,8 @@ import PatientDashboard from './pages/PatientDashboard'
 import DoctorDashboard from './pages/DoctorDashboard'
 import AppointmentBooking from './pages/AppointmentBooking'
 import Reports from './pages/Reports'
+import ServiceRegistryDashboard from './pages/ServiceRegistryDashboard'
+import CircuitBreakerDashboard from './pages/CircuitBreakerDashboard'
 
 function App() {
   return (
@@ -17,6 +19,10 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* Dashboards de Monitoreo - Públicos */}
+          <Route path="/service-registry" element={<ServiceRegistryDashboard />} />
+          <Route path="/circuit-breaker" element={<CircuitBreakerDashboard />} />
           
           <Route path="/" element={
             <ProtectedRoute>

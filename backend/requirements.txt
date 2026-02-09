@@ -1,13 +1,87 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-psycopg2-binary
-pymongo
-redis
-pydantic[email]
-pydantic-settings
+# ===========================================
+# CORE FRAMEWORK
+# ===========================================
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# ===========================================
+# BASES DE DATOS
+# ===========================================
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+pymongo==4.6.1
+redis==5.0.1
+
+# ===========================================
+# VALIDACIÓN Y CONFIGURACIÓN
+# ===========================================
+pydantic[email]==2.5.3
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# ===========================================
+# SEGURIDAD Y AUTENTICACIÓN
+# ===========================================
 bcrypt==4.0.1
-passlib
-python-multipart
-python-jose[cryptography]
-email-validator
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# ===========================================
+# NOTIFICACIONES
+# ===========================================
+# Email
+sendgrid==6.11.0
+
+# SMS (opcional - comentar si no se usa)
+twilio==8.11.1
+
+# ===========================================
+# MONITOREO Y OBSERVABILIDAD
+# ===========================================
+# Métricas y monitoreo
+prometheus-client==0.19.0
+
+# Logging mejorado
+python-json-logger==2.0.7
+
+# ===========================================
+# CIRCUIT BREAKER Y RESILIENCIA
+# ===========================================
+# Circuit breaker pattern
+pybreaker==1.0.1
+
+# Retry logic
+tenacity==8.2.3
+
+# ===========================================
+# HTTP CLIENTS
+# ===========================================
+httpx==0.26.0
+aiohttp==3.9.1
+
+# ===========================================
+# WEBSOCKETS (para dashboards en tiempo real)
+# ===========================================
+websockets==12.0
+
+# ===========================================
+# UTILIDADES
+# ===========================================
+python-dateutil==2.8.2
+pytz==2023.3
+
+# ===========================================
+# TESTING (opcional)
+# ===========================================
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+httpx==0.26.0  # Para testing de API
+
+# ===========================================
+# DESARROLLO (opcional)
+# ===========================================
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0
