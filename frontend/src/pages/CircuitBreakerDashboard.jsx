@@ -155,7 +155,7 @@ export default function CircuitBreakerDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl">Cargando Circuit Breaker Dashboard...</div>
+        <div className="text-xl text-gray-900">Cargando Circuit Breaker Dashboard...</div>
       </div>
     );
   }
@@ -169,7 +169,7 @@ export default function CircuitBreakerDashboard() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           🔌 Circuit Breaker Dashboard
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-800">
           Demostración de patrón Circuit Breaker con Service B simulado
         </p>
       </div>
@@ -183,14 +183,14 @@ export default function CircuitBreakerDashboard() {
             onChange={(e) => setAutoRefresh(e.target.checked)}
             className="w-4 h-4"
           />
-          <span className="text-gray-700">Auto-refresh (3s)</span>
+          <span className="text-gray-900 font-medium">Auto-refresh (3s)</span>
         </label>
       </div>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Circuit Breaker Status */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             Circuit Breaker Status
           </h2>
@@ -198,7 +198,7 @@ export default function CircuitBreakerDashboard() {
           {breaker && (
             <div className="space-y-4">
               {/* State Indicator */}
-              <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-center p-8 bg-gray-100 rounded-lg border border-gray-300">
                 <div className="text-center">
                   <div className="text-6xl mb-2">{getStateIcon(breaker.state)}</div>
                   <div className="text-2xl font-bold text-gray-900">
@@ -209,27 +209,27 @@ export default function CircuitBreakerDashboard() {
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded">
-                  <div className="text-sm text-gray-600">Failure Count</div>
+                <div className="bg-gray-100 p-4 rounded border border-gray-300">
+                  <div className="text-sm text-gray-800 font-medium">Failure Count</div>
                   <div className="text-2xl font-bold text-gray-900">
                     {breaker.failure_count} / {breaker.failure_threshold}
                   </div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded">
-                  <div className="text-sm text-gray-600">Timeout</div>
+                <div className="bg-gray-100 p-4 rounded border border-gray-300">
+                  <div className="text-sm text-gray-800 font-medium">Timeout</div>
                   <div className="text-2xl font-bold text-gray-900">
                     {breaker.timeout}s
                   </div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded">
-                  <div className="text-sm text-gray-600">Total Calls</div>
+                <div className="bg-gray-100 p-4 rounded border border-gray-300">
+                  <div className="text-sm text-gray-800 font-medium">Total Calls</div>
                   <div className="text-2xl font-bold text-gray-900">
                     {breaker.metrics.total_calls}
                   </div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded">
-                  <div className="text-sm text-gray-600">Success Rate</div>
-                  <div className="text-2xl font-bold text-green-600">
+                <div className="bg-gray-100 p-4 rounded border border-gray-300">
+                  <div className="text-sm text-gray-800 font-medium">Success Rate</div>
+                  <div className="text-2xl font-bold text-green-700">
                     {breaker.metrics.success_rate}%
                   </div>
                 </div>
@@ -239,12 +239,12 @@ export default function CircuitBreakerDashboard() {
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Successful</span>
-                    <span className="text-green-600 font-medium">
+                    <span className="text-gray-800 font-medium">Successful</span>
+                    <span className="text-green-700 font-medium">
                       {breaker.metrics.successful_calls}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-300 rounded-full h-2">
                     <div
                       className="bg-green-500 h-2 rounded-full"
                       style={{
@@ -256,12 +256,12 @@ export default function CircuitBreakerDashboard() {
 
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Failed</span>
-                    <span className="text-red-600 font-medium">
+                    <span className="text-gray-800 font-medium">Failed</span>
+                    <span className="text-red-700 font-medium">
                       {breaker.metrics.failed_calls}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-300 rounded-full h-2">
                     <div
                       className="bg-red-500 h-2 rounded-full"
                       style={{
@@ -273,20 +273,32 @@ export default function CircuitBreakerDashboard() {
 
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Rejected</span>
-                    <span className="text-yellow-600 font-medium">
+                    <span className="text-gray-800 font-medium">Rejected</span>
+                    <span className="text-yellow-700 font-medium">
                       {breaker.metrics.rejected_calls}
                     </span>
+                  </div>
+                  <div className="w-full bg-gray-300 rounded-full h-2">
+                    <div
+                      className="bg-yellow-500 h-2 rounded-full"
+                      style={{
+                        width: `${
+                          (breaker.metrics.rejected_calls /
+                            breaker.metrics.total_calls) *
+                          100
+                        }%`,
+                      }}
+                    ></div>
                   </div>
                 </div>
               </div>
 
               {/* Response Time */}
-              <div className="bg-blue-50 p-4 rounded">
-                <div className="text-sm text-gray-600 mb-1">
+              <div className="bg-blue-50 p-4 rounded border border-blue-200">
+                <div className="text-sm text-gray-800 font-medium mb-1">
                   Average Response Time
                 </div>
-                <div className="text-xl font-bold text-blue-600">
+                <div className="text-xl font-bold text-blue-700">
                   {breaker.metrics.average_response_time.toFixed(2)}ms
                 </div>
               </div>
@@ -294,7 +306,7 @@ export default function CircuitBreakerDashboard() {
               {/* Reset Button */}
               <button
                 onClick={() => resetBreaker(selectedBreaker)}
-                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold"
               >
                 ♻️ Reset Circuit Breaker
               </button>
@@ -303,7 +315,7 @@ export default function CircuitBreakerDashboard() {
         </div>
 
         {/* Service B Control */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             Service B Control
           </h2>
@@ -311,8 +323,8 @@ export default function CircuitBreakerDashboard() {
           {serviceBStats && (
             <div className="space-y-4">
               {/* Current Mode */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-sm text-gray-600 mb-2">Current Mode</div>
+              <div className="bg-gray-100 p-4 rounded-lg border border-gray-300">
+                <div className="text-sm text-gray-800 font-medium mb-2">Current Mode</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {serviceBStats.mode}
                 </div>
@@ -320,46 +332,46 @@ export default function CircuitBreakerDashboard() {
 
               {/* Mode Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Mode
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Seleccionar Modo
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setServiceMode('STABLE')}
-                    className={`px-4 py-2 rounded-lg transition ${
+                    className={`px-4 py-2 rounded-lg font-semibold transition ${
                       serviceBMode === 'STABLE'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'bg-green-600 text-white shadow-md'
+                        : 'bg-green-100 text-green-800 hover:bg-green-200 border border-green-300'
                     }`}
                   >
                     🟢 STABLE
                   </button>
                   <button
                     onClick={() => setServiceMode('INTERMITTENT')}
-                    className={`px-4 py-2 rounded-lg transition ${
+                    className={`px-4 py-2 rounded-lg font-semibold transition ${
                       serviceBMode === 'INTERMITTENT'
-                        ? 'bg-yellow-500 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'bg-yellow-600 text-white shadow-md'
+                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-300'
                     }`}
                   >
                     🟡 INTERMITTENT
                   </button>
                   <button
                     onClick={() => setServiceMode('FAILING')}
-                    className={`px-4 py-2 rounded-lg transition ${
+                    className={`px-4 py-2 rounded-lg font-semibold transition ${
                       serviceBMode === 'FAILING'
-                        ? 'bg-red-500 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'bg-red-600 text-white shadow-md'
+                        : 'bg-red-100 text-red-800 hover:bg-red-200 border border-red-300'
                     }`}
                   >
                     🔴 FAILING
                   </button>
                   <button
                     onClick={() => setServiceMode('SLOW')}
-                    className={`px-4 py-2 rounded-lg transition ${
+                    className={`px-4 py-2 rounded-lg font-semibold transition ${
                       serviceBMode === 'SLOW'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-300'
                     }`}
                   >
                     🔵 SLOW
@@ -370,7 +382,7 @@ export default function CircuitBreakerDashboard() {
               {/* Mode Configuration */}
               {serviceBMode === 'INTERMITTENT' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Failure Rate: {(failureRate * 100).toFixed(0)}%
                   </label>
                   <input
@@ -387,7 +399,7 @@ export default function CircuitBreakerDashboard() {
 
               {serviceBMode === 'SLOW' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Delay: {slowDelay}s
                   </label>
                   <input
@@ -403,26 +415,26 @@ export default function CircuitBreakerDashboard() {
               )}
 
               {/* Statistics */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-sm font-medium text-gray-700 mb-2">
+              <div className="bg-gray-100 p-4 rounded-lg border border-gray-300">
+                <div className="text-sm font-medium text-gray-900 mb-2">
                   Service B Statistics
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <div className="text-xs text-gray-600">Total</div>
-                    <div className="text-lg font-bold">
+                    <div className="text-xs text-gray-800 font-medium">Total</div>
+                    <div className="text-lg font-bold text-gray-900">
                       {serviceBStats.statistics.total_requests}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-600">Success</div>
-                    <div className="text-lg font-bold text-green-600">
+                    <div className="text-xs text-gray-800 font-medium">Success</div>
+                    <div className="text-lg font-bold text-green-700">
                       {serviceBStats.statistics.successful_requests}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-600">Failed</div>
-                    <div className="text-lg font-bold text-red-600">
+                    <div className="text-xs text-gray-800 font-medium">Failed</div>
+                    <div className="text-lg font-bold text-red-700">
                       {serviceBStats.statistics.failed_requests}
                     </div>
                   </div>
@@ -432,7 +444,7 @@ export default function CircuitBreakerDashboard() {
               {/* Reset Stats Button */}
               <button
                 onClick={resetServiceBStats}
-                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold"
               >
                 ♻️ Reset Statistics
               </button>
@@ -442,25 +454,25 @@ export default function CircuitBreakerDashboard() {
       </div>
 
       {/* Test Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8 border border-gray-200">
         <h2 className="text-xl font-bold text-gray-900 mb-4">🧪 Testing</h2>
 
         <div className="flex gap-4 mb-4">
           <button
             onClick={() => runTest(5)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
           >
             Run 5 Requests
           </button>
           <button
             onClick={() => runTest(10)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
           >
             Run 10 Requests
           </button>
           <button
             onClick={() => runTest(20)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
           >
             Run 20 Requests
           </button>
@@ -468,30 +480,30 @@ export default function CircuitBreakerDashboard() {
 
         {testResults && (
           <div className="mt-4">
-            <div className="bg-gray-50 p-4 rounded-lg mb-4">
-              <h3 className="font-bold mb-2">Test Summary</h3>
+            <div className="bg-gray-100 p-4 rounded-lg mb-4 border border-gray-300">
+              <h3 className="font-bold text-gray-900 mb-2">Test Summary</h3>
               <div className="grid grid-cols-4 gap-4 text-center">
                 <div>
-                  <div className="text-sm text-gray-600">Total</div>
-                  <div className="text-xl font-bold">
+                  <div className="text-sm text-gray-800 font-medium">Total</div>
+                  <div className="text-xl font-bold text-gray-900">
                     {testResults.test_summary.total_requests}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Successful</div>
-                  <div className="text-xl font-bold text-green-600">
+                  <div className="text-sm text-gray-800 font-medium">Successful</div>
+                  <div className="text-xl font-bold text-green-700">
                     {testResults.test_summary.successful}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Failed</div>
-                  <div className="text-xl font-bold text-red-600">
+                  <div className="text-sm text-gray-800 font-medium">Failed</div>
+                  <div className="text-xl font-bold text-red-700">
                     {testResults.test_summary.failed}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Final State</div>
-                  <div className="text-xl font-bold">
+                  <div className="text-sm text-gray-800 font-medium">Final State</div>
+                  <div className="text-xl font-bold text-gray-900">
                     {getStateIcon(testResults.test_summary.final_circuit_state)}{' '}
                     {testResults.test_summary.final_circuit_state}
                   </div>
@@ -500,19 +512,19 @@ export default function CircuitBreakerDashboard() {
             </div>
 
             <div className="max-h-64 overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-300">
+                <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-900 uppercase">
                       #
                     </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-900 uppercase">
                       Result
                     </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-900 uppercase">
                       State Before
                     </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-900 uppercase">
                       State After
                     </th>
                   </tr>
@@ -520,12 +532,12 @@ export default function CircuitBreakerDashboard() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {testResults.results.map((result, idx) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-2">{result.request_number}</td>
+                      <td className="px-4 py-2 text-gray-900">{result.request_number}</td>
                       <td className="px-4 py-2">
                         {result.success ? (
-                          <span className="text-green-600 font-medium">✓ Success</span>
+                          <span className="text-green-700 font-medium">✓ Success</span>
                         ) : (
-                          <span className="text-red-600 font-medium">✗ Failed</span>
+                          <span className="text-red-700 font-medium">✗ Failed</span>
                         )}
                       </td>
                       <td className="px-4 py-2">{getStateIcon(result.state_before)}</td>
@@ -541,7 +553,7 @@ export default function CircuitBreakerDashboard() {
 
       {/* Recent Calls (if metrics available) */}
       {breakerMetrics && breakerMetrics.recent_calls && (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             📋 Recent Calls (Last 20)
           </h2>
@@ -558,18 +570,18 @@ export default function CircuitBreakerDashboard() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">{call.result}</span>
-                  <span className="text-sm text-gray-500">
+                  <span className="font-medium text-gray-900">{call.result}</span>
+                  <span className="text-sm text-gray-700">
                     {new Date(call.timestamp).toLocaleTimeString()}
                   </span>
                 </div>
                 {call.response_time > 0 && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-800">
                     Response: {call.response_time.toFixed(2)}ms
                   </div>
                 )}
                 {call.error && (
-                  <div className="text-sm text-red-600">{call.error}</div>
+                  <div className="text-sm text-red-700">{call.error}</div>
                 )}
               </div>
             ))}

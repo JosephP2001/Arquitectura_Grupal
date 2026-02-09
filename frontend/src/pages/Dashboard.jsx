@@ -27,7 +27,7 @@ const Dashboard = () => {
               <h1 className="text-3xl font-bold">
                 Bienvenido, {user?.full_name || user?.username}
               </h1>
-              <p className="text-medical-100 mt-1">
+              <p className="text-white/90 mt-1">
                 Panel de Administración - Plataforma de Agendamiento de Citas Médicas
               </p>
             </div>
@@ -46,10 +46,10 @@ const Dashboard = () => {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-xl font-bold text-medical-900 mb-2">
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">
                       📊 Reportes del Sistema
                     </h2>
-                    <p className="text-clinical-700 mb-4">
+                    <p className="text-gray-800 mb-4">
                       Visualiza estadísticas y reportes completos del sistema
                     </p>
                     <div className="inline-flex items-center text-medical-700 font-semibold">
@@ -73,15 +73,15 @@ const Dashboard = () => {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-health-900 mb-2">
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
                     ⚙️ Gestión del Sistema
                   </h2>
-                  <p className="text-clinical-700 mb-4">
+                  <p className="text-gray-800 mb-4">
                     Administrar usuarios, doctores y configuraciones
                   </p>
                   <button
                     disabled
-                    className="px-4 py-2 bg-clinical-300 text-clinical-600 rounded-lg font-semibold cursor-not-allowed"
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-semibold cursor-not-allowed"
                   >
                     Próximamente
                   </button>
@@ -98,15 +98,15 @@ const Dashboard = () => {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-purple-900 mb-2">
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
                     👥 Usuarios
                   </h2>
-                  <p className="text-clinical-700 mb-4">
+                  <p className="text-gray-800 mb-4">
                     Total de pacientes y doctores registrados
                   </p>
                   <button
                     disabled
-                    className="px-4 py-2 bg-clinical-300 text-clinical-600 rounded-lg font-semibold cursor-not-allowed"
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-semibold cursor-not-allowed"
                   >
                     Próximamente
                   </button>
@@ -123,15 +123,15 @@ const Dashboard = () => {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-orange-900 mb-2">
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
                     📅 Citas
                   </h2>
-                  <p className="text-clinical-700 mb-4">
+                  <p className="text-gray-800 mb-4">
                     Gestión completa de citas médicas
                   </p>
                   <button
                     disabled
-                    className="px-4 py-2 bg-clinical-300 text-clinical-600 rounded-lg font-semibold cursor-not-allowed"
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-semibold cursor-not-allowed"
                   >
                     Próximamente
                   </button>
@@ -143,24 +143,24 @@ const Dashboard = () => {
 
         {/* Información del Usuario */}
         <div className="mt-8 medical-card fade-in bg-gradient-to-r from-clinical-50 to-clinical-100 border-2 border-clinical-200">
-          <h3 className="text-lg font-bold text-clinical-900 mb-4 flex items-center">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
             <svg className="w-6 h-6 mr-2 text-medical-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Información del Usuario
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-lg border border-clinical-200">
-              <p className="text-sm text-clinical-600 mb-1">Nombre</p>
-              <p className="font-semibold text-clinical-900">{user?.full_name}</p>
+            <div className="bg-white p-4 rounded-lg border border-clinical-300">
+              <p className="text-sm text-gray-700 mb-1">Nombre</p>
+              <p className="font-semibold text-gray-900">{user?.full_name}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-clinical-200">
-              <p className="text-sm text-clinical-600 mb-1">Email</p>
-              <p className="font-semibold text-clinical-900">{user?.email}</p>
+            <div className="bg-white p-4 rounded-lg border border-clinical-300">
+              <p className="text-sm text-gray-700 mb-1">Email</p>
+              <p className="font-semibold text-gray-900">{user?.email}</p>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-clinical-200">
-              <p className="text-sm text-clinical-600 mb-1">Rol</p>
-              <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold border border-purple-200">
+            <div className="bg-white p-4 rounded-lg border border-clinical-300">
+              <p className="text-sm text-gray-700 mb-1">Rol</p>
+              <span className="inline-block px-3 py-1 bg-purple-100 text-purple-900 rounded-full text-sm font-semibold border border-purple-300">
                 👑 {user?.role}
               </span>
             </div>

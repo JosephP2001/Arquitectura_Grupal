@@ -102,20 +102,20 @@ export default function ServiceRegistryDashboard() {
   const getStatusTextColor = (status) => {
     switch (status) {
       case 'UP':
-        return 'text-green-600';
+        return 'text-green-700';
       case 'DOWN':
-        return 'text-red-600';
+        return 'text-red-700';
       case 'DEGRADED':
-        return 'text-yellow-600';
+        return 'text-yellow-700';
       default:
-        return 'text-gray-600';
+        return 'text-gray-700';
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl">Cargando Service Registry Dashboard...</div>
+        <div className="text-xl text-gray-900">Cargando Service Registry Dashboard...</div>
       </div>
     );
   }
@@ -127,7 +127,7 @@ export default function ServiceRegistryDashboard() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           🔍 Service Registry Dashboard
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-800">
           Monitoreo en tiempo real de servicios registrados
         </p>
       </div>
@@ -136,7 +136,7 @@ export default function ServiceRegistryDashboard() {
       <div className="mb-6 flex gap-4 items-center">
         <button
           onClick={triggerAllHealthChecks}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
         >
           🔄 Health Check Manual
         </button>
@@ -148,7 +148,7 @@ export default function ServiceRegistryDashboard() {
             onChange={(e) => setAutoRefresh(e.target.checked)}
             className="w-4 h-4"
           />
-          <span className="text-gray-700">Auto-refresh (5s)</span>
+          <span className="text-gray-900 font-medium">Auto-refresh (5s)</span>
         </label>
       </div>
 
@@ -157,7 +157,7 @@ export default function ServiceRegistryDashboard() {
         {Object.entries(services).map(([serviceName, serviceInfo]) => (
           <div
             key={serviceName}
-            className="bg-white rounded-lg shadow-md p-6 border-l-4"
+            className="bg-white rounded-lg shadow-md p-6 border-l-4 border-gray-200"
             style={{
               borderLeftColor:
                 serviceInfo.status === 'UP'
@@ -180,22 +180,22 @@ export default function ServiceRegistryDashboard() {
               </span>
             </div>
 
-            <div className="space-y-2 text-sm text-gray-600 mb-4">
+            <div className="space-y-2 text-sm text-gray-800 mb-4">
               <div className="flex justify-between">
-                <span>Host:</span>
-                <span className="font-mono">{serviceInfo.host}</span>
+                <span className="font-medium">Host:</span>
+                <span className="font-mono text-gray-900">{serviceInfo.host}</span>
               </div>
               <div className="flex justify-between">
-                <span>Puerto:</span>
-                <span className="font-mono">{serviceInfo.port}</span>
+                <span className="font-medium">Puerto:</span>
+                <span className="font-mono text-gray-900">{serviceInfo.port}</span>
               </div>
               <div className="flex justify-between">
-                <span>Total Checks:</span>
-                <span className="font-mono">{serviceInfo.total_checks}</span>
+                <span className="font-medium">Total Checks:</span>
+                <span className="font-mono text-gray-900">{serviceInfo.total_checks}</span>
               </div>
               <div className="flex justify-between">
-                <span>Fallos:</span>
-                <span className="font-mono">{serviceInfo.failure_count}</span>
+                <span className="font-medium">Fallos:</span>
+                <span className="font-mono text-gray-900">{serviceInfo.failure_count}</span>
               </div>
             </div>
 
@@ -204,7 +204,7 @@ export default function ServiceRegistryDashboard() {
                 setSelectedService(serviceName);
                 fetchServiceHistory(serviceName);
               }}
-              className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition text-sm"
+              className="w-full px-3 py-2 bg-gray-200 text-gray-900 rounded hover:bg-gray-300 transition text-sm font-semibold"
             >
               Ver Historial
             </button>
@@ -213,31 +213,31 @@ export default function ServiceRegistryDashboard() {
       </div>
 
       {/* Metrics Table */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8 border border-gray-200">
         <h2 className="text-xl font-bold text-gray-900 mb-4">
           📊 Métricas Detalladas
         </h2>
         
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-300">
+            <thead className="bg-gray-100">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Servicio
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Uptime
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Exitosos
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Fallidos
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Último Check
                 </th>
               </tr>
@@ -261,24 +261,24 @@ export default function ServiceRegistryDashboard() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
+                      <div className="flex-1 bg-gray-300 rounded-full h-2 mr-2">
                         <div
                           className="bg-green-500 h-2 rounded-full"
                           style={{ width: `${metric.uptime_percentage}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-900 font-medium">
                         {metric.uptime_percentage}%
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                     {metric.successful_checks}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                     {metric.failed_checks}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                     {metric.last_check
                       ? new Date(metric.last_check).toLocaleString()
                       : 'N/A'}
@@ -300,7 +300,7 @@ export default function ServiceRegistryDashboard() {
               </h2>
               <button
                 onClick={() => setSelectedService(null)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-700 hover:text-gray-900 text-2xl font-bold"
               >
                 ×
               </button>
@@ -308,7 +308,7 @@ export default function ServiceRegistryDashboard() {
 
             <div className="space-y-3">
               {serviceHistory.length === 0 ? (
-                <p className="text-gray-500">No hay historial disponible</p>
+                <p className="text-gray-700">No hay historial disponible</p>
               ) : (
                 serviceHistory.map((record, index) => (
                   <div
@@ -331,17 +331,17 @@ export default function ServiceRegistryDashboard() {
                       >
                         {record.status}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-700">
                         {new Date(record.timestamp).toLocaleString()}
                       </span>
                     </div>
                     {record.response_time_ms && (
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-800">
                         Response time: {record.response_time_ms.toFixed(2)}ms
                       </div>
                     )}
                     {record.error_message && (
-                      <div className="text-sm text-red-600">
+                      <div className="text-sm text-red-700">
                         Error: {record.error_message}
                       </div>
                     )}
